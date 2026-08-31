@@ -4,11 +4,13 @@ import { parseAgentJson } from "../parseJson";
 import { BrandProfile } from "@/types/brand";
 import { Slide } from "@/types/slide";
 import { VisualDirection } from "@/types/slide";
+import { applyOfficialIdentity, FeedTier } from "@/design/brandIdentity";
 
 /** Turns finished copy into per-slide visual instructions that respect brand identity. */
 export async function runArtDirector(
   slides: Slide[],
-  brand?: BrandProfile
+  brand?: BrandProfile,
+  recentTiers: FeedTier[] = []
 ): Promise<VisualDirection[]> {
   const provider = getAIProvider();
   const raw = await provider.generateText(artDirectorPrompt(slides, brand), {
@@ -28,6 +30,7 @@ export async function runArtDirector(
     imageNeeded: false,
   }));
 
-  const directions = parseAgentJson<VisualDirection[]>(raw, fallback);
-  return directions.length === slides.length ? directions : fallback;
+  const parsed = parseAgentJson<VisualDirection[]>(raw, fallback);
+  const directions = parsed.length === slides.length ? parsed : fallback;
+  return applyOfficialIdentity(directions, slides, recentTiers);
 }

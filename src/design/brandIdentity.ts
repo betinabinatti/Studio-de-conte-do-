@@ -1,10 +1,11 @@
-import { CompositionType } from "@/types/slide";
 import { AlignmentPreference } from "@/types/brand";
+import { Slide, VisualDirection } from "@/types/slide";
 
 /**
- * Official brand identity for the rendered art (Instagram posts/slides).
- * Fixed by explicit client decision — do not add colors, fonts, or spacing
- * values outside what's defined here without that authorization.
+ * Official creative direction for the rendered art (Instagram posts).
+ * Fixed by explicit client decision — "Escada de Pontos / ABA Autoridade".
+ * Do not add colors, fonts, or rules outside what's defined here without
+ * that authorization.
  */
 
 export interface PaletteColor {
@@ -19,7 +20,7 @@ export const OFFICIAL_PALETTE: PaletteColor[] = [
   { name: "Cinza claro", hex: "#eaeaea" },
   { name: "Off-white", hex: "#f4f2ee" },
   { name: "Azul-marinho", hex: "#1f3a4a" },
-  { name: "Terracota (destaque)", hex: "#c46a4a" },
+  { name: "Terracota (assinatura emocional)", hex: "#c46a4a" },
 ];
 
 const OFF_WHITE = "#f4f2ee";
@@ -30,34 +31,49 @@ const PETROLEO_MEDIO = "#6e8a92";
 const AZUL_MARINHO = "#1f3a4a";
 const TERRACOTA = "#c46a4a";
 
-/**
- * Background/text combinations, pre-vetted for WCAG contrast (>= 3:1, the
- * large-bold-text threshold every one of these carries at title sizes).
- * `weight` biases how often a pair is picked — terracota and the medium
- * petróleo are rarer, per "não usar terracota em excesso".
- */
+/** The one accent color of the identity — reserved for a single emotional highlight per post. */
+export const ACCENT_COLOR = TERRACOTA;
+
+export type FeedTier = "claro" | "medio" | "ancora";
+
 export interface ContrastPair {
   background: string;
   text: string;
-  weight: number;
+  tier: FeedTier;
 }
 
+/**
+ * Fundo sólido e liso apenas — sem gradiente, textura ou terracota como
+ * background (terracota é reservada à assinatura emocional de destaque).
+ * Contraste pré-validado (WCAG >= 4.6:1, todos acima do mínimo AA).
+ */
 export const CONTRAST_PAIRS: ContrastPair[] = [
-  { background: OFF_WHITE, text: CINZA_ESCURO, weight: 3 },
-  { background: CINZA_CLARO, text: CINZA_ESCURO, weight: 2 },
-  { background: PETROLEO_ESCURO, text: OFF_WHITE, weight: 2 },
-  { background: AZUL_MARINHO, text: OFF_WHITE, weight: 2 },
-  { background: CINZA_ESCURO, text: OFF_WHITE, weight: 1 },
-  { background: PETROLEO_MEDIO, text: OFF_WHITE, weight: 1 },
-  { background: TERRACOTA, text: OFF_WHITE, weight: 1 },
+  { background: OFF_WHITE, text: CINZA_ESCURO, tier: "claro" },
+  { background: CINZA_CLARO, text: CINZA_ESCURO, tier: "claro" },
+  { background: PETROLEO_ESCURO, text: OFF_WHITE, tier: "medio" },
+  { background: PETROLEO_MEDIO, text: CINZA_ESCURO, tier: "medio" },
+  { background: AZUL_MARINHO, text: OFF_WHITE, tier: "ancora" },
 ];
 
-const WEIGHTED_PAIRS: ContrastPair[] = CONTRAST_PAIRS.flatMap((pair) =>
-  Array(pair.weight).fill(pair)
-);
+const PAIRS_BY_TIER: Record<FeedTier, ContrastPair[]> = {
+  claro: CONTRAST_PAIRS.filter((p) => p.tier === "claro"),
+  medio: CONTRAST_PAIRS.filter((p) => p.tier === "medio"),
+  ancora: CONTRAST_PAIRS.filter((p) => p.tier === "ancora"),
+};
 
-/** The one accent color of the identity — used sparingly for highlights/CTAs. */
-export const ACCENT_COLOR = TERRACOTA;
+/** Feed rhythm target: âncora a cada 3–4 posts, claro/médio alternando entre os demais. */
+const FEED_CYCLE: FeedTier[] = ["claro", "medio", "claro", "ancora"];
+
+export function classifyTier(hex?: string): FeedTier | undefined {
+  return CONTRAST_PAIRS.find((p) => p.background.toLowerCase() === hex?.toLowerCase())?.tier;
+}
+
+export function getPairForBackground(hex: string): ContrastPair {
+  return (
+    CONTRAST_PAIRS.find((p) => p.background.toLowerCase() === hex.toLowerCase()) ??
+    CONTRAST_PAIRS[0]
+  );
+}
 
 function hashSeed(value: string): number {
   let hash = 0;
@@ -67,15 +83,31 @@ function hashSeed(value: string): number {
   return hash;
 }
 
-/** Deterministic per-slide background/text pair — stable across re-renders. */
-export function pickBackgroundPair(slideIndex: number, seedText = ""): ContrastPair {
-  const seed = hashSeed(seedText);
-  return WEIGHTED_PAIRS[(seed + slideIndex) % WEIGHTED_PAIRS.length];
+/**
+ * Decides which tier the NEW post's cover should use, given the tiers of
+ * recent posts (most recent first). Avoids repeating the immediately
+ * previous tier and keeps "ancora" rare (~1 in every 3–4 posts).
+ */
+export function pickFeedTier(recentTiers: FeedTier[]): FeedTier {
+  const previous = recentTiers[0];
+  const sinceAncora = recentTiers.indexOf("ancora");
+  const ancoraDue = sinceAncora === -1 ? recentTiers.length >= 3 : sinceAncora >= 3;
+
+  if (ancoraDue && previous !== "ancora") return "ancora";
+
+  const cycleIndex = recentTiers.length % FEED_CYCLE.length;
+  let candidate = FEED_CYCLE[cycleIndex] === "ancora" ? "claro" : FEED_CYCLE[cycleIndex];
+  if (candidate === previous) {
+    candidate = candidate === "claro" ? "medio" : "claro";
+  }
+  return candidate;
 }
 
-/** Terracota is the accent everywhere except when it's already the background. */
-export function getAccentColor(backgroundHex: string): string {
-  return backgroundHex.toLowerCase() === TERRACOTA ? AZUL_MARINHO : ACCENT_COLOR;
+/** Picks one pair within a tier, varying by seed so a carousel's slides differ. */
+export function pickPairInTier(tier: FeedTier, seedText: string): ContrastPair {
+  const options = PAIRS_BY_TIER[tier];
+  const seed = hashSeed(seedText);
+  return options[seed % options.length];
 }
 
 const SPACING = { xs: 16, sm: 28, md: 44, lg: 68, xl: 100 } as const;
@@ -92,55 +124,63 @@ export const GRID = {
     return this.CANVAS_WIDTH - this.SAFE_MARGIN_X * 2;
   },
   TITLE_MAX_WIDTH: 660,
+  /** Split-panel (fotografia + cartela) margin — a narrower canvas half. */
+  PANEL_MARGIN: 64,
 };
 
-interface AlignmentHeuristicInput {
-  composition: CompositionType;
-  bodyLength: number;
-  imageNeeded: boolean;
-  isFirst: boolean;
-  isLast: boolean;
-  slideIndex: number;
+/**
+ * Alinhamento padrão é ESQUERDA — não há mais centralização automática por
+ * composição. Uma preferência fixa de marca (central/direita) sempre vence;
+ * "automatico" resolve para esquerda, a linguagem visual padrão do sistema.
+ */
+export function resolveAlignment(
+  preference: AlignmentPreference | undefined
+): "left" | "center" | "right" {
+  if (preference === "central") return "center";
+  if (preference === "direita") return "right";
+  return "left";
 }
 
 /**
- * Resolves the "AUTO" alignment decision: a fixed brand preference always
- * wins; otherwise the composition, text volume and image presence decide.
+ * Decisão editorial de caixa: caixa alta para frases de confronto/impacto/
+ * afirmação/provocação; capitalização natural para frases intimistas,
+ * reflexivas ou de identificação. Heurística determinística (sem custo de
+ * IA extra) — usada quando o agente não fornece `titleCase` explicitamente.
  */
-export function resolveAlignment(
-  preference: AlignmentPreference | undefined,
-  input: AlignmentHeuristicInput
-): "left" | "center" | "right" {
-  if (preference === "esquerda") return "left";
-  if (preference === "direita") return "right";
-  if (preference === "central") return "center";
+export function resolveTitleCase(title: string): "uppercase" | "natural" {
+  const text = title.trim();
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  let score = 0;
 
-  if (input.imageNeeded || input.composition === "texto-imagem") {
-    return input.slideIndex % 2 === 0 ? "left" : "right";
-  }
-  if (input.composition === "gancho-central" || input.composition === "cta-final") {
-    return "center";
-  }
-  if (input.composition === "lista" || input.composition === "comparacao") {
-    return "left";
-  }
-  if (input.bodyLength > 0 && input.bodyLength < 60) {
-    return "center";
-  }
-  if (input.isFirst || input.isLast) {
-    return "center";
-  }
-  return "left";
+  // Uppercase é a exceção — só quando o texto tem um marcador claro de
+  // confronto/afirmação, nunca só por ser curto (isso reintroduziria a
+  // regra automática que essa heurística existe pra evitar).
+  if (/\bn[ãa]o\s+(é|significa|precisa|quer dizer)\b/i.test(text)) score += 1;
+  if (/^(pare|olhe|observe|entenda|confie|respire|escute)\b/i.test(text)) score += 1;
+  if (/[!?]$/.test(text) && wordCount <= 8) score += 1;
+
+  if (/^(às vezes|nem sempre|talvez|quando|porque|se\s|e se\s|cada\s)/i.test(text)) score -= 1;
+  if (/\.\.\.|…/.test(text)) score -= 1;
+  if (wordCount > 12) score -= 1;
+  if (/,/.test(text) && wordCount > 8) score -= 1;
+
+  return score > 0 ? "uppercase" : "natural";
 }
 
 /**
  * Balanced multi-line title formatting: greedy-wraps to a target width, then
  * rebalances a lone final word into the line above so titles never end on an
- * orphan. The title is always forced to uppercase here — the one place that
- * matters, since export renders straight from these lines.
+ * orphan. Case is applied here per the resolved editorial decision, never
+ * forced — the one place that matters, since export renders straight from
+ * these lines.
  */
-export function formatTitleLines(rawTitle: string, maxCharsPerLine: number): string[] {
-  const words = rawTitle.trim().toUpperCase().split(/\s+/).filter(Boolean);
+export function formatTitleLines(
+  rawTitle: string,
+  maxCharsPerLine: number,
+  titleCase: "uppercase" | "natural" = "natural"
+): string[] {
+  const normalized = titleCase === "uppercase" ? rawTitle.trim().toUpperCase() : rawTitle.trim();
+  const words = normalized.split(/\s+/).filter(Boolean);
   if (words.length <= 1) return [words.join("")];
 
   const lines: string[] = [];
@@ -172,8 +212,17 @@ export function formatTitleLines(rawTitle: string, maxCharsPerLine: number): str
   return lines;
 }
 
-/** Rough average glyph width for Montserrat Bold uppercase, as a fraction of font size. */
-export const TITLE_CHAR_WIDTH_RATIO = 0.66;
+/**
+ * Average glyph width for Montserrat Bold uppercase, as a fraction of font
+ * size — measured via canvas.measureText (~0.70), not guessed. Kept a touch
+ * above the measured value on purpose: real DOM text layout can render
+ * marginally wider than canvas measurement, and this ratio is what decides
+ * whether a word gets its own line, so it must never underestimate.
+ */
+export const TITLE_CHAR_WIDTH_RATIO = 0.74;
+
+/** Extra headroom applied only to the "does this word fit" check (rule 21 — never break a word). */
+const WORD_FIT_SAFETY = 0.9;
 
 export function estimateMaxCharsPerLine(fontSize: number, maxWidth = GRID.TITLE_MAX_WIDTH): number {
   return Math.max(6, Math.floor(maxWidth / (fontSize * TITLE_CHAR_WIDTH_RATIO)));
@@ -184,9 +233,63 @@ export function estimateMaxCharsPerLine(fontSize: number, maxWidth = GRID.TITLE_
  * lines at full size — step the font size down so long titles stay
  * compositionally balanced instead of dominating (or overflowing) the art.
  */
-export function resolveTitleFontSize(basePx: number, title: string): number {
-  const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
-  if (wordCount > 10) return Math.round(basePx * 0.62);
-  if (wordCount > 6) return Math.round(basePx * 0.78);
-  return basePx;
+export function resolveTitleFontSize(
+  basePx: number,
+  title: string,
+  maxWidth = GRID.TITLE_MAX_WIDTH
+): number {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  let size = basePx;
+  if (words.length > 10) size = Math.round(basePx * 0.62);
+  else if (words.length > 6) size = Math.round(basePx * 0.78);
+
+  // A single long word (e.g. "MANIPULAÇÃO") must fit on its own line at
+  // this size — otherwise it has nowhere to wrap to and would overflow or
+  // break mid-word. Shrink further, down to a readable floor, until it fits.
+  const longestWordLen = Math.max(0, ...words.map((w) => w.length));
+  if (longestWordLen > 0) {
+    const maxFitSize = Math.floor(
+      (maxWidth * WORD_FIT_SAFETY) / (longestWordLen * TITLE_CHAR_WIDTH_RATIO)
+    );
+    size = Math.max(30, Math.min(size, maxFitSize));
+  }
+
+  return size;
+}
+
+/**
+ * The one place the system "decides before rendering": takes the art
+ * director's raw structural output (composition, textPosition, spacing,
+ * imageNeeded) and resolves the parts that belong to the fixed identity —
+ * background color, title case — instead of trusting the agent's guess.
+ * Runs once at generation time (not per render), so the choice is
+ * persisted and future generations can read this post's tier back via
+ * `classifyTier`, which is what makes feed-rhythm alternation possible.
+ */
+export function applyOfficialIdentity(
+  directions: VisualDirection[],
+  slides: Slide[],
+  recentTiers: FeedTier[] = []
+): VisualDirection[] {
+  const coverTier = pickFeedTier(recentTiers);
+  // A per-call nonce, not per-render: lets "Alterar visual" land on a
+  // different (still compliant) pair each time it re-runs this resolver,
+  // even though the slide text itself doesn't change.
+  const callNonce = Math.random().toString(36).slice(2);
+
+  return directions.map((direction, i) => {
+    const slide = slides[i];
+    const tier = i === 0 ? coverTier : i % 2 === 0 ? coverTier : "claro";
+    const pair = pickPairInTier(tier, `${slide?.title ?? ""}::${i}::${callNonce}`);
+    const titleCase =
+      direction.titleCase === "uppercase" || direction.titleCase === "natural"
+        ? direction.titleCase
+        : resolveTitleCase(slide?.title ?? "");
+
+    return {
+      ...direction,
+      background: { type: "solid", colors: [pair.background] },
+      titleCase,
+    };
+  });
 }

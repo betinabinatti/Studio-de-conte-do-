@@ -202,45 +202,35 @@ function buildSlides(context: any) {
   });
 }
 
+/** No máximo uma palavra em terracota por peça — a assinatura emocional da mensagem. */
 function extractHighlights(title: string): string[] {
   const words = title.split(" ").filter((w) => w.length > 5);
-  return words.slice(0, 2);
+  return words.slice(0, 1);
 }
 
-const PALETTES = [
-  ["#FBF9F6", "#1E1B18", "#C4622D"],
-  ["#EDE6DC", "#1E1B18", "#6E7C6B"],
-];
-
+/**
+ * Background color and alignment aren't decided here — `applyOfficialIdentity`
+ * resolves those from the fixed brand identity after this runs. This only
+ * hints at structure: composition, vertical position, size, spacing.
+ */
 function buildVisualDirections(context: any) {
   const slides = context.slides || [];
-  const brandColors: string[] = (context.brand?.colors || []).map((c: any) => c.hex);
-  const palette = brandColors.length >= 2 ? brandColors : PALETTES[0];
-  const flip = Math.random() > 0.5;
   const spacingOptions = ["airy", "normal"] as const;
   const spacing = pick([...spacingOptions], Math.floor(Math.random() * 2));
 
   return slides.map((slide: any, i: number) => {
     const isFirst = i === 0;
     const isLast = i === slides.length - 1;
-    const alt = flip ? i % 2 !== 0 : i % 2 === 0;
     return {
       slideIndex: slide.index,
-      background: {
-        type: isFirst || isLast ? "solid" : alt ? "solid" : "gradient",
-        colors: isFirst || isLast
-          ? [palette[1] || "#1E1B18", palette[1] || "#1E1B18"]
-          : alt
-          ? [palette[0] || "#FBF9F6", palette[0] || "#FBF9F6"]
-          : [palette[0] || "#FBF9F6", palette[2] || "#C4622D"],
-      },
+      background: { type: "solid", colors: ["#f4f2ee"] },
       typography: {
         titleSize: isFirst ? "xl" : isLast ? "lg" : "md",
         bodySize: "md",
         titleFont: "display",
       },
       textPosition: isFirst ? "center" : "top",
-      alignment: isFirst || isLast ? "center" : "left",
+      alignment: "left",
       composition: isFirst ? "gancho-central" : isLast ? "cta-final" : "texto-simples",
       graphicElements: isFirst ? ["marca-dagua", "numero-slide"] : ["numero-slide"],
       spacing,

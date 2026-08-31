@@ -183,7 +183,7 @@ export function BrandForm({ initial }: { initial: BrandProfile }) {
 
         <Field
           label="Alinhamento"
-          hint="Automático deixa a composição decidir por slide, conforme quantidade de texto e presença de imagem."
+          hint="Automático segue o padrão da identidade — alinhamento à esquerda. Trave em Central ou Direita só se quiser sobrepor a direção criativa oficial."
         >
           <AlignmentPicker
             value={profile.alignmentPreference}

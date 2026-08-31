@@ -34,4 +34,6 @@ export interface VisualDirection {
   imageNeeded: boolean;
   imageDescription?: string;
   imageUrl?: string;
+  /** Decisão editorial: caixa alta (confronto/impacto) ou natural (intimista/reflexivo). */
+  titleCase?: "uppercase" | "natural";
 }

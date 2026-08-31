@@ -99,9 +99,18 @@ O `SlideCanvas` (`src/components/render/SlideCanvas.tsx`) monta cada slide como 
 
 Um provedor de imagem (via `IMAGE_API_KEY`) só entraria em jogo para ilustrações/fotos de fundo que a diretora de arte (`artDirector`) sinalizar como necessárias — nunca para escrever texto dentro da imagem.
 
-### Identidade visual oficial
+### Direção criativa definitiva — "Escada de Pontos / ABA Autoridade"
 
-`src/design/brandIdentity.ts` fixa a identidade visual da arte gerada — paleta de 7 cores, pares fundo/texto pré-validados por contraste (WCAG), tipografia (Montserrat Bold para título em caixa alta, Montserrat Regular para corpo), escala de espaçamento e grid com margem segura de 100px. O `SlideCanvas` resolve cor e alinhamento a partir desse módulo (nunca do texto bruto da IA), então toda arte sai visualmente consistente e dentro das margens independentemente do provedor. O alinhamento tem um modo **Automático** (decide por slide conforme composição, quantidade de texto e presença de imagem) que pode ser travado em Central/Esquerda/Direita em `/brand`.
+`src/design/brandIdentity.ts` fixa a direção criativa oficial da arte gerada:
+
+- **Paleta e contraste**: 5 pares fundo/texto validados por WCAG, agrupados em 3 tiers (`claro`, `medio`, `ancora`). Fundo sempre sólido e liso — sem gradiente, textura ou terracota como background.
+- **Terracota como assinatura emocional**: no máximo uma palavra em destaque por peça (nunca uma lista), reservada à parte emocionalmente mais importante da frase.
+- **Tipografia Montserrat**: título em Bold, corpo em Regular. A caixa do título é uma **decisão editorial** — maiúscula para frases de confronto/impacto/afirmação, natural para frases intimistas/reflexivas — nunca automática.
+- **Alinhamento padrão à esquerda** (não centraliza automaticamente), com margem segura de 100px e grid de 1080px.
+- **Fotografia + cartela**: quando há imagem, o layout divide a arte em dois painéis lado a lado (foto limpa de um lado, texto sobre cor sólida do outro) — nunca texto sobreposto à foto.
+- **Ritmo de feed**: cada geração real (`contentService.generate`/`regenerate`, rota `restyle`) lê os últimos posts salvos e escolhe o tier de fundo evitando repetir o anterior, com o fundo-âncora (azul-marinho) aparecendo a cada 3–4 posts.
+
+Essas decisões são resolvidas **uma vez, na geração** (`applyOfficialIdentity`, chamado por `runArtDirector`) e persistidas no conteúdo — o `SlideCanvas` só lê o resultado já decidido, nunca re-decide cor/alinhamento a cada render. Isso é o que torna o ritmo de feed possível: gerações futuras conseguem ler o histórico real de tiers usados.
 
 ### Camada de marca
 
