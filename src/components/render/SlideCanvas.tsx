@@ -36,21 +36,35 @@ interface SlideCanvasProps {
   showCta?: CTA;
 }
 
+/**
+ * Regra absoluta: no máximo UMA palavra/linha em terracota por peça — a
+ * assinatura emocional do texto inteiro, não do título especificamente.
+ * Aplica no título se o texto aparecer lá; senão tenta o corpo. Nunca nos
+ * dois ao mesmo tempo.
+ */
+function resolveSingleHighlight(slide: Slide): { title: string[]; body: string[] } {
+  const phrase = slide.highlightWords?.[0];
+  if (!phrase) return { title: [], body: [] };
+  const needle = phrase.toLowerCase();
+  if (slide.title.toLowerCase().includes(needle)) return { title: [phrase], body: [] };
+  if (slide.body?.toLowerCase().includes(needle)) return { title: [], body: [phrase] };
+  return { title: [], body: [] };
+}
+
 function TitleBlock({
   slide,
   titleSize,
   titleCase,
   maxCharsPerLine,
+  highlightWords,
 }: {
   slide: Slide;
   titleSize: number;
   titleCase: "uppercase" | "natural";
   maxCharsPerLine: number;
+  highlightWords: string[];
 }) {
   const titleLines = formatTitleLines(slide.title, maxCharsPerLine, titleCase);
-  // Regra absoluta: no máximo UMA palavra em terracota por peça — a
-  // assinatura emocional, não uma lista de destaques.
-  const singleHighlight = slide.highlightWords?.slice(0, 1);
 
   return (
     <h2
@@ -68,7 +82,7 @@ function TitleBlock({
     >
       {titleLines.map((line, i) => (
         <div key={i}>
-          <HighlightedText text={line} highlightWords={singleHighlight} accentColor={ACCENT_COLOR} />
+          <HighlightedText text={line} highlightWords={highlightWords} accentColor={ACCENT_COLOR} />
         </div>
       ))}
     </h2>
@@ -104,6 +118,7 @@ export const SlideCanvas = forwardRef<HTMLDivElement, SlideCanvasProps>(
     // lado, alternando o lado da foto por slide para variar a composição.
     const showPhotoSplit = Boolean(direction.imageUrl) && direction.composition === "texto-imagem";
     const photoOnRight = slide.index % 2 === 0;
+    const highlight = resolveSingleHighlight(slide);
 
     const textPanel = (
       <div
@@ -154,6 +169,7 @@ export const SlideCanvas = forwardRef<HTMLDivElement, SlideCanvasProps>(
               showPhotoSplit ? Math.round(titleSize * 0.75) : titleSize,
               showPhotoSplit ? width / 2 - GRID.PANEL_MARGIN * 2 : GRID.TITLE_MAX_WIDTH
             )}
+            highlightWords={highlight.title}
           />
           {slide.body && (
             <p
@@ -165,7 +181,7 @@ export const SlideCanvas = forwardRef<HTMLDivElement, SlideCanvasProps>(
                 whiteSpace: "pre-line",
               }}
             >
-              {slide.body}
+              <HighlightedText text={slide.body} highlightWords={highlight.body} accentColor={ACCENT_COLOR} />
             </p>
           )}
 
