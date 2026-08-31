@@ -12,6 +12,7 @@ import {
   formatTitleLines,
   estimateMaxCharsPerLine,
   resolveTitleFontSize,
+  resolveBodyFontSize,
 } from "@/design/brandIdentity";
 import { HighlightedText } from "./HighlightedText";
 
@@ -52,20 +53,16 @@ function resolveSingleHighlight(slide: Slide): { title: string[]; body: string[]
 }
 
 function TitleBlock({
-  slide,
+  titleLines,
   titleSize,
   titleCase,
-  maxCharsPerLine,
   highlightWords,
 }: {
-  slide: Slide;
+  titleLines: string[];
   titleSize: number;
   titleCase: "uppercase" | "natural";
-  maxCharsPerLine: number;
   highlightWords: string[];
 }) {
-  const titleLines = formatTitleLines(slide.title, maxCharsPerLine, titleCase);
-
   return (
     <h2
       style={{
@@ -111,14 +108,31 @@ export const SlideCanvas = forwardRef<HTMLDivElement, SlideCanvasProps>(
         : "flex-start";
 
     const verticalPadding = VERTICAL_PADDING[direction.spacing] ?? GRID.SAFE_MARGIN_TOP;
-    const titleSize = resolveTitleFontSize(TITLE_SIZES[direction.typography.titleSize] || 64, slide.title);
-    const bodySize = BODY_SIZES[direction.typography.bodySize] || 36;
 
     // Fotografia + cartela: nunca texto sobreposto à foto. Painéis lado a
     // lado, alternando o lado da foto por slide para variar a composição.
     const showPhotoSplit = Boolean(direction.imageUrl) && direction.composition === "texto-imagem";
     const photoOnRight = slide.index % 2 === 0;
     const highlight = resolveSingleHighlight(slide);
+
+    const panelWidth = showPhotoSplit ? width / 2 - GRID.PANEL_MARGIN * 2 : GRID.TITLE_MAX_WIDTH;
+    const panelContentWidth = showPhotoSplit ? width / 2 - GRID.PANEL_MARGIN * 2 : GRID.CONTENT_MAX_WIDTH;
+    const titleSize0 = resolveTitleFontSize(TITLE_SIZES[direction.typography.titleSize] || 64, slide.title);
+    const titleSize = showPhotoSplit ? Math.round(titleSize0 * 0.75) : titleSize0;
+    const titleLines = formatTitleLines(slide.title, estimateMaxCharsPerLine(titleSize, panelWidth), titleCase);
+    const titleBlockHeight = titleLines.length * titleSize * 1.15 + SPACING.md;
+
+    const ctaBlockHeight = showCta && showCta.intent !== "nenhum" ? 28 * 1.4 + 32 + SPACING.lg : 0;
+    const availableBodyHeight = Math.max(
+      0,
+      height - verticalPadding * 2 - titleBlockHeight - ctaBlockHeight
+    );
+    const bodySizeBase = showPhotoSplit
+      ? Math.round((BODY_SIZES[direction.typography.bodySize] || 36) * 0.85)
+      : BODY_SIZES[direction.typography.bodySize] || 36;
+    const bodySize = slide.body
+      ? resolveBodyFontSize(bodySizeBase, slide.body, panelContentWidth, availableBodyHeight)
+      : bodySizeBase;
 
     const textPanel = (
       <div
@@ -162,19 +176,15 @@ export const SlideCanvas = forwardRef<HTMLDivElement, SlideCanvasProps>(
 
         <div style={{ maxWidth: showPhotoSplit ? "100%" : GRID.CONTENT_MAX_WIDTH, textAlign: alignment, zIndex: 1 }}>
           <TitleBlock
-            slide={slide}
-            titleSize={showPhotoSplit ? Math.round(titleSize * 0.75) : titleSize}
+            titleLines={titleLines}
+            titleSize={titleSize}
             titleCase={titleCase}
-            maxCharsPerLine={estimateMaxCharsPerLine(
-              showPhotoSplit ? Math.round(titleSize * 0.75) : titleSize,
-              showPhotoSplit ? width / 2 - GRID.PANEL_MARGIN * 2 : GRID.TITLE_MAX_WIDTH
-            )}
             highlightWords={highlight.title}
           />
           {slide.body && (
             <p
               style={{
-                fontSize: showPhotoSplit ? Math.round(bodySize * 0.85) : bodySize,
+                fontSize: bodySize,
                 lineHeight: 1.5,
                 opacity: 0.92,
                 fontWeight: 400,
@@ -234,6 +244,7 @@ export const SlideCanvas = forwardRef<HTMLDivElement, SlideCanvasProps>(
           style={{
             width,
             height,
+            overflow: "hidden",
             transform: `scale(${scale})`,
             transformOrigin: "top left",
             display: "flex",
