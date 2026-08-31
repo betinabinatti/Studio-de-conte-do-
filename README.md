@@ -99,6 +99,10 @@ O `SlideCanvas` (`src/components/render/SlideCanvas.tsx`) monta cada slide como 
 
 Um provedor de imagem (via `IMAGE_API_KEY`) só entraria em jogo para ilustrações/fotos de fundo que a diretora de arte (`artDirector`) sinalizar como necessárias — nunca para escrever texto dentro da imagem.
 
+### Identidade visual oficial
+
+`src/design/brandIdentity.ts` fixa a identidade visual da arte gerada — paleta de 7 cores, pares fundo/texto pré-validados por contraste (WCAG), tipografia (Montserrat Bold para título em caixa alta, Montserrat Regular para corpo), escala de espaçamento e grid com margem segura de 100px. O `SlideCanvas` resolve cor e alinhamento a partir desse módulo (nunca do texto bruto da IA), então toda arte sai visualmente consistente e dentro das margens independentemente do provedor. O alinhamento tem um modo **Automático** (decide por slide conforme composição, quantidade de texto e presença de imagem) que pode ser travado em Central/Esquerda/Direita em `/brand`.
+
 ### Camada de marca
 
 A `BrandProfile` (nome, área de atuação, público, posicionamento, tom de voz, palavras a usar/evitar, cores, fonte, estilos visuais, logo) é salva uma única vez em `/brand` e injetada automaticamente em todos os agentes a cada geração — o usuário nunca precisa reexplicar a marca.

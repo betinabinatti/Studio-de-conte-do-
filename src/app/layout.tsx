@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/ui/NavBar";
 
@@ -15,6 +15,14 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+// Official typography for the rendered art (Instagram posts) — kept
+// separate from the app's own UI fonts above.
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-art",
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
   title: "Studio de Conteúdo",
   description: "Transforme uma ideia em um post pronto para publicar.",
@@ -26,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={`${fraunces.variable} ${inter.variable} ${montserrat.variable}`}>
       <body className="font-sans antialiased min-h-screen bg-paper text-ink">
         <NavBar />
         <main className="min-h-[calc(100vh-72px)]">{children}</main>

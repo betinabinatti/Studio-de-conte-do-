@@ -7,9 +7,13 @@ export function artDirectorPrompt(slides: Slide[], brand?: BrandProfile) {
 
 ${brandSummary(brand)}
 Estilos visuais da marca: ${brand?.visualStyles?.join(", ") || "clean, editorial"}.
-Cores da marca: ${brand?.colors?.map((c) => c.hex).join(", ") || "usar paleta neutra elegante (bege, grafite, terracota)"}.
 
-Para cada um dos ${slides.length} slides, defina: fundo (sólido, gradiente ou textura + cores), tipografia (tamanho do título e corpo, fonte de destaque ou não), posição do texto, alinhamento, tipo de composição, elementos gráficos, espaçamento, e se uma imagem/ilustração é realmente necessária (use com moderação).
+Identidade visual oficial (fixa — a renderização já aplica isso automaticamente, você não escolhe cores nem alinhamento final, apenas a estrutura da composição):
+- Paleta: petróleo escuro, petróleo médio, cinza escuro, cinza claro, off-white, azul-marinho e terracota (usado com moderação, como destaque pontual).
+- Tipografia: Montserrat Bold para título (sempre caixa alta) e Montserrat Regular para corpo.
+- Direção estética: profissional, sofisticada, acolhedora, científica sem ser fria — infantil sem ser infantilizada. Evite estética de Canva genérico, excesso de elementos, cores muito saturadas ou aparência escolar.
+
+Para cada um dos ${slides.length} slides, defina: tipo de fundo (sólido, gradiente ou textura — a cor em si é resolvida pela identidade visual), tipografia (tamanho do título e corpo), posição vertical do texto, tipo de composição (pense nos layouts: central, lateral, texto+imagem, frase de impacto, informação em blocos, CTA), elementos gráficos, espaçamento, e se uma imagem/ilustração é realmente necessária (use com moderação — nunca para texto).
 
 Responda APENAS com um JSON (array, um item por slide, na mesma ordem):
 [{

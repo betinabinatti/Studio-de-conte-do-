@@ -5,9 +5,11 @@ import { BrandProfile } from "@/types/brand";
 import { Field, TextInput, TextArea } from "@/components/ui/Field";
 import { ColorListEditor } from "./ColorListEditor";
 import { VisualStylePicker } from "./VisualStylePicker";
+import { AlignmentPicker } from "./AlignmentPicker";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Check, Upload } from "lucide-react";
+import { OFFICIAL_PALETTE } from "@/design/brandIdentity";
 
 export function BrandForm({ initial }: { initial: BrandProfile }) {
   const [profile, setProfile] = useState<BrandProfile>(initial);
@@ -136,6 +138,57 @@ export function BrandForm({ initial }: { initial: BrandProfile }) {
               {profile.logoUrl ? "Trocar logo" : "Enviar logo"}
             </Button>
           </div>
+        </Field>
+      </Card>
+
+      <Card className="space-y-5 p-7">
+        <div>
+          <h3 className="font-display text-lg text-ink">Identidade visual oficial</h3>
+          <p className="mt-1 text-sm text-ink/50">
+            Paleta e tipografia fixas da arte gerada — aplicadas automaticamente em toda
+            renderização, não editáveis por aqui.
+          </p>
+        </div>
+
+        <Field label="Paleta">
+          <div className="flex flex-wrap gap-3">
+            {OFFICIAL_PALETTE.map((color) => (
+              <span
+                key={color.hex}
+                className="flex items-center gap-2 rounded-full border border-ink/10 py-1 pl-1 pr-3 text-xs text-ink/70"
+              >
+                <span
+                  className="h-5 w-5 rounded-full border border-ink/10"
+                  style={{ backgroundColor: color.hex }}
+                />
+                {color.name} · {color.hex.toUpperCase()}
+              </span>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Tipografia">
+          <div className="grid gap-2 text-sm text-ink/70 sm:grid-cols-3">
+            <span>
+              <strong className="text-ink">Título:</strong> Montserrat Bold (caixa alta)
+            </span>
+            <span>
+              <strong className="text-ink">Subtítulo:</strong> Montserrat Regular
+            </span>
+            <span>
+              <strong className="text-ink">Corpo:</strong> Montserrat Regular
+            </span>
+          </div>
+        </Field>
+
+        <Field
+          label="Alinhamento"
+          hint="Automático deixa a composição decidir por slide, conforme quantidade de texto e presença de imagem."
+        >
+          <AlignmentPicker
+            value={profile.alignmentPreference}
+            onChange={(alignmentPreference) => update("alignmentPreference", alignmentPreference)}
+          />
         </Field>
       </Card>
 

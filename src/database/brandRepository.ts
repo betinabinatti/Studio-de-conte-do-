@@ -4,7 +4,8 @@ import { BrandProfile, emptyBrandProfile } from "@/types/brand";
 const SINGLETON_KEY = "brand";
 
 export async function getBrandProfile(): Promise<BrandProfile> {
-  return readSingleton<BrandProfile>(SINGLETON_KEY, emptyBrandProfile());
+  const stored = await readSingleton<BrandProfile>(SINGLETON_KEY, emptyBrandProfile());
+  return { ...emptyBrandProfile(), ...stored };
 }
 
 export async function saveBrandProfile(profile: BrandProfile): Promise<BrandProfile> {
