@@ -22,7 +22,7 @@ export function HighlightedText({
     <>
       {parts.map((part, i) =>
         highlightWords.some((w) => w.toLowerCase() === part.toLowerCase()) ? (
-          <span key={i} style={{ color: accentColor }}>
+          <span key={i} style={{ color: accentColor, fontWeight: 700 }}>
             {part}
           </span>
         ) : (

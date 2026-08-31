@@ -8,6 +8,7 @@ import { runArtDirector } from "./agents/artDirector";
 import { runContentReviewer } from "./agents/contentReviewer";
 import { runCaptionWriter, runCtaWriter } from "./agents/copyExtras";
 import { runImageGenerator } from "./agents/imageGenerator";
+import { FeedTier } from "@/design/brandIdentity";
 
 export type PipelineStage =
   | "strategy"
@@ -34,7 +35,8 @@ export const PIPELINE_STAGE_LABELS: Record<PipelineStage, string> = {
 export async function runContentPipeline(
   brief: ContentBrief,
   brand: BrandProfile | undefined,
-  onStage?: (stage: PipelineStage) => void
+  onStage?: (stage: PipelineStage) => void,
+  recentTiers: FeedTier[] = []
 ): Promise<GeneratedContent> {
   onStage?.("strategy");
   const strategy = await runContentStrategist(brief, brand);
@@ -43,7 +45,7 @@ export async function runContentPipeline(
   const rawSlides = await runCopywriter(brief, strategy, brand);
 
   onStage?.("visual-direction");
-  let visualDirections = await runArtDirector(rawSlides, brand);
+  let visualDirections = await runArtDirector(rawSlides, brand, recentTiers);
 
   onStage?.("rendering");
   const dimensions = FORMAT_DIMENSIONS[brief.format];

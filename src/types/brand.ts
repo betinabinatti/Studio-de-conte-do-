@@ -7,6 +7,8 @@ export type VisualStyle =
   | "clean"
   | "colorido";
 
+export type AlignmentPreference = "automatico" | "central" | "esquerda" | "direita";
+
 export interface BrandColor {
   hex: string;
   label?: string;
@@ -25,6 +27,7 @@ export interface BrandProfile {
   primaryFont: string;
   visualStyles: VisualStyle[];
   logoUrl?: string;
+  alignmentPreference: AlignmentPreference;
   updatedAt: string;
 }
 
@@ -41,5 +44,6 @@ export const emptyBrandProfile = (): BrandProfile => ({
   primaryFont: "",
   visualStyles: [],
   logoUrl: undefined,
+  alignmentPreference: "automatico",
   updatedAt: new Date().toISOString(),
 });
