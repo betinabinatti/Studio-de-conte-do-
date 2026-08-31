@@ -15,7 +15,7 @@ export function getAIProvider(): AIProvider {
   const apiKey = process.env.AI_API_KEY || process.env.ANTHROPIC_API_KEY;
 
   if (apiKey) {
-    cachedProvider = new AnthropicAIProvider(apiKey, process.env.AI_MODEL);
+    cachedProvider = new AnthropicAIProvider(apiKey, process.env.AI_MODEL || undefined);
   } else {
     cachedProvider = new MockAIProvider();
   }
