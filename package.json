@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@upstash/redis": "^1.38.3",
+    "@vercel/blob": "^2.8.0",
     "clsx": "^2.1.1",
     "html-to-image": "^1.11.11",
     "lucide-react": "^0.454.0",
