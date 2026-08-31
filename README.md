@@ -15,7 +15,7 @@ Nenhuma etapa é um único prompt gigante. Cada uma é um agente com responsabil
 - **Next.js 14 (App Router)** + **React 18** + **TypeScript**
 - **Tailwind CSS** para o design system
 - **html-to-image** para exportar a arte renderizada em HTML/CSS como PNG real
-- **Armazenamento em arquivos JSON** (`data/`) — zero infraestrutura externa para rodar o MVP localmente
+- **Armazenamento**: arquivos JSON (`data/`) localmente; Redis (Upstash, via integração da Vercel) + Vercel Blob em produção — mesma interface, troca automática por variável de ambiente
 - **AIProvider**: abstração de fornecedor de IA (`src/ai/AIProvider.ts`) com implementação mock (modo demonstração) e uma implementação real via Claude (Anthropic)
 
 ## Como rodar
@@ -49,6 +49,15 @@ Com `AI_API_KEY` configurada, os agentes passam a usar Claude de verdade para es
 
 Esse fluxo foi testado ponta a ponta durante o desenvolvimento (inclusive a exportação real do PNG em resolução final).
 
+## Deploy na Vercel
+
+1. Importe o repositório em [vercel.com/new](https://vercel.com/new) (framework Next.js é detectado automaticamente).
+2. Em **Settings → Environment Variables**, adicione `AI_API_KEY` (sua chave da Anthropic).
+3. Em **Storage**, adicione as integrações **Redis** e **Blob** — a Vercel injeta `KV_REST_API_URL`, `KV_REST_API_TOKEN` e `BLOB_READ_WRITE_TOKEN` automaticamente, sem precisar copiar nada manualmente.
+4. Faça o deploy.
+
+Sem os dois storages configurados, o app funciona (inclusive gerar conteúdo com IA), mas salvar histórico, ideias e marca não persiste de forma confiável — funções serverless têm sistema de arquivos somente leitura, e o fallback local em `data/*.json` só existe para rodar em `npm run dev`.
+
 ## Arquitetura
 
 ```
@@ -65,7 +74,7 @@ src/
   types/                    # BrandProfile, ContentBrief, ContentStrategy,
                              # Slide, VisualDirection, GeneratedContent,
                              # Caption, CTA, ContentIdea
-  database/                 # armazenamento em JSON (db.ts) + repositórios
+  database/                 # armazenamento: JSON local ou Redis/Blob (db.ts) + repositórios
   services/                 # brandService, contentService, ideaService
   components/
     ui/                     # Button, Card, Field, Badge, NavBar
@@ -114,7 +123,6 @@ A `BrandProfile` (nome, área de atuação, público, posicionamento, tom de voz
 
 ## Próximos passos (fora do escopo do MVP, por decisão deliberada)
 
-- Banco de dados real (Postgres) no lugar dos arquivos JSON — a camada de repositórios já isola essa troca
 - Provedor de imagem real (IMAGE_API_KEY) para ilustrações de fundo
 - Login/múltiplas marcas, calendário editorial, publicação automática, métricas
 - Anexar fontes/DOIs reais às afirmações sinalizadas pelo revisor
