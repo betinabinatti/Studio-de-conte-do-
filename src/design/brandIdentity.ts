@@ -293,3 +293,55 @@ export function applyOfficialIdentity(
     };
   });
 }
+
+/** Average glyph width for Montserrat Regular, as a fraction of font size. */
+const BODY_CHAR_WIDTH_RATIO = 0.52;
+const BODY_LINE_HEIGHT_RATIO = 1.5;
+
+function estimateBodyLines(body: string, fontSize: number, maxWidth: number): number {
+  const charsPerLine = Math.max(10, Math.floor(maxWidth / (fontSize * BODY_CHAR_WIDTH_RATIO)));
+  let lines = 0;
+  for (const paragraph of body.split(/\n+/)) {
+    const words = paragraph.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      lines += 1;
+      continue;
+    }
+    let lineLen = 0;
+    let lineCount = 1;
+    for (const word of words) {
+      const added = lineLen ? lineLen + 1 + word.length : word.length;
+      if (added > charsPerLine && lineLen) {
+        lineCount++;
+        lineLen = word.length;
+      } else {
+        lineLen = added;
+      }
+    }
+    lines += lineCount;
+  }
+  return lines;
+}
+
+/**
+ * Shrinks body text until it fits the vertical space actually left in the
+ * canvas — never below a readable floor. Prevents copy that's too long for
+ * the format (a post único has far less room than a carrossel slide) from
+ * bleeding past the safe area; export always clips to the canvas regardless,
+ * this is what keeps that clip from ever being visible in practice.
+ */
+export function resolveBodyFontSize(
+  basePx: number,
+  body: string,
+  maxWidth: number,
+  availableHeight: number
+): number {
+  let size = basePx;
+  for (let i = 0; i < 8 && size > 20; i++) {
+    const lines = estimateBodyLines(body, size, maxWidth);
+    const neededHeight = lines * size * BODY_LINE_HEIGHT_RATIO;
+    if (neededHeight <= availableHeight) break;
+    size -= 2;
+  }
+  return Math.max(20, size);
+}
